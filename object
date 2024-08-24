@@ -1,0 +1,295 @@
+//図形描画抽象クラス
+abstract class Shape {
+  float x, y; //表示座標
+  int shapeColor; //色
+  
+  Shape(float x0, float y0, int c0) {
+    x = x0;
+    y = y0;
+    shapeColor = c0;
+  }
+  
+  // 図形描画抽象メソッド
+  abstract void draw();
+  // 図形更新抽象メソッド
+  abstract void update();
+}
+
+
+
+
+
+
+//継承クラス：正多角形
+class Polygon extends Shape {
+  int sides; //辺数
+  float radius; //半径
+  float angleOffset;//角度
+  float rotationSpeed;//回転速度
+  
+  Polygon(float x0, float y0, float r0, int s0, int c0) {
+    super(x0, y0, c0);
+    radius = r0;
+    sides = s0;
+    angleOffset = 0;
+    rotationSpeed = random(0.01, 0.1);
+  }
+  
+  void draw() {
+    strokeWeight(4); // 線の太さ
+    stroke(shapeColor); // 線の色
+    noFill(); // 塗りつぶしなし
+    beginShape();
+    // 多角形の各頂点を描画
+    for (int i = 0; i < sides; i++) {
+      float angle = map(i + angleOffset, 0, sides, 0, PI*2);
+      float px = x + cos(angle) * radius;
+      float py = y + sin(angle) * radius;
+      vertex(px, py);
+    }
+    endShape(CLOSE); // 多角形を閉じる
+  }
+  
+  void update() {
+    angleOffset += rotationSpeed;
+  }
+}
+
+
+
+
+
+
+
+
+
+// 継承クラス：円
+class Circle extends Shape {
+  float radius; // 半径
+  
+  Circle(float x0, float y0, float r0, int c0) {
+    super(x0, y0, c0);
+    radius = r0;
+  }
+  
+  void draw() {
+    strokeWeight(4); // 線の太さ
+    stroke(shapeColor); // 線の色
+    noFill(); // 塗りつぶしなし
+    ellipse(x, y, radius * 2, radius * 2);
+  }
+  
+  
+  void update() {
+    //do nothing
+  }
+}
+
+
+
+
+
+
+
+//ユーザー処理クラス
+class User {
+  Slider radiusSlider;//円の半径
+  Slider sidesSlider;//辺数
+  Button drawButton;
+  Button resetButton;
+  Button animateButton;
+  
+  User() {
+    float buttonWidth = width * 0.15;
+    float buttonHeight = height * 0.05;
+    float sliderWidth = width * 0.4;
+    float sliderHeight = buttonHeight;
+    float spacing = width * 0.03;
+
+    float centerX = width / 2;
+    float bottomY = height - buttonHeight - spacing;
+
+    // スライダーの位置とサイズ
+    radiusSlider = new Slider(centerX - sliderWidth / 2, bottomY - 2 * (sliderHeight + spacing), sliderWidth, sliderHeight, 10, 200, 100);
+    sidesSlider = new Slider(centerX - sliderWidth / 2, bottomY - (sliderHeight + spacing), sliderWidth, sliderHeight, 3, 20, 6);
+    
+    // ボタンの位置とサイズ
+    drawButton = new Button(centerX - buttonWidth - spacing / 2 - buttonWidth / 2, bottomY + spacing / 2, buttonWidth, buttonHeight, "D r a w");
+    resetButton = new Button(centerX - buttonWidth / 2, bottomY + spacing / 2, buttonWidth, buttonHeight, "R e s e t");
+    animateButton = new Button(centerX + spacing / 2 + buttonWidth / 2, bottomY + spacing / 2, buttonWidth, buttonHeight, "A n i m a t i o n");
+  }
+  
+  //ユーザー処理領域の描画
+  void display() {
+    radiusSlider.display();
+    sidesSlider.display();
+    drawButton.display();
+    resetButton.display();
+    animateButton.display();
+  }
+  
+  //ユーザーのクリック処理
+  void handleClick(float mx, float my) {
+    if (drawButton.isClicked(mx, my)) {
+      float radius = radiusSlider.getValue();
+      int sides = (int)sidesSlider.getValue();
+      
+      // 新たな図形を追加
+      if (shapeCount < shapes.length) {
+        shapes[shapeCount++] = new Polygon(width / 2, height / 2, radius, sides, color(20, 20, 20));
+        if (shapeCount < shapes.length) {
+          shapes[shapeCount++] = new Circle(width / 2, height / 2, radius, color(20, 20, 20));
+        }
+      }
+    } else if (resetButton.isClicked(mx, my)) {
+      shapeCount = 0; // 描画図形をリセット
+    } else if (animateButton.isClicked(mx, my)) {
+      isAnimating = !isAnimating; // アニメーション切替
+    }
+  }
+}
+
+//スライダークラス
+class Slider {
+  float x, y, w, h, minValue, maxValue, value;
+  boolean isDragging;
+  
+  Slider(float x0, float y0, float w0, float h0, float minValue0, float maxValue0, float initialValue0) {
+    x = x0;
+    y = y0;
+    w = w0;
+    h = h0;
+    minValue = minValue0;
+    maxValue = maxValue0;
+    value = initialValue0;
+    isDragging = false;
+  }
+  
+  // スライダーの描画
+  void display() {
+    fill(200);
+    rect(x, y, w, h);
+    fill(0);
+    float sliderPos = map(value, minValue, maxValue, x, x + w);
+    float knobSize = h * 0.8; // ノブのサイズ
+    ellipse(sliderPos, y + h / 2, knobSize, knobSize); // ノブを描画
+  }
+  
+  float getValue() {
+    return value;
+  }
+  
+  // スライダーの値を更新
+  void update(float mx) {
+    if (isDragging) {
+      if (mx >= x && mx <= x + w) {
+        value = map(mx, x, x + w, minValue, maxValue);
+      }
+    }
+  }
+  
+  void startDragging() {
+    isDragging = true;
+  }
+  
+  void stopDragging() {
+    isDragging = false;
+  }
+}
+
+
+
+
+
+
+
+
+
+
+//ボタンクラス
+class Button {
+  float x, y, w, h;
+  String label;
+  int textSize;
+  
+  // コンストラクタ: ボタンの位置、サイズ、ラベルを初期化
+  Button(float x0, float y0, float w0, float h0, String l0) {
+    x = x0;
+    y = y0;
+    w = w0;
+    h = h0;
+    label = l0;
+    textSize = (int)(h * 0.4); // 文字サイズを設定
+  }
+  
+  // ボタンの描画
+  void display() {
+    fill(150);
+    rect(x, y, w, h);
+    fill(0);
+    textAlign(CENTER, CENTER);
+    textSize(textSize);
+    text(label, x + w / 2, y + h / 2); // ボタン内に文字列を描画
+  }
+  
+  // ボタンがクリックされたかどうかの判定
+  boolean isClicked(float mx, float my) {
+    return mx > x && mx < x + w && my > y && my < y + h;
+  }
+}
+
+// メインコード
+Shape[] shapes;
+int shapeCount;
+User user;
+boolean isAnimating = false;
+
+void setup() {
+  fullScreen(); 
+  shapes = new Shape[10];
+  shapeCount = 0; 
+  user = new User();
+  frameRate(30);
+}
+
+void draw() {
+  background(255);
+  user.display();
+  
+  // 図形の描画と更新
+  for (int i = 0; i < shapeCount; i++) {
+    shapes[i].draw();
+    if (isAnimating) {
+      shapes[i].update();
+    }
+  }
+}
+
+
+
+
+
+
+
+
+void mousePressed() {
+  user.handleClick(mouseX, mouseY);
+  // スライダーのドラッグ開始処理
+  if (mouseX >= user.radiusSlider.x && mouseX <= user.radiusSlider.x + user.radiusSlider.w && mouseY >= user.radiusSlider.y && mouseY <= user.radiusSlider.y + user.radiusSlider.h) {
+    user.radiusSlider.startDragging();
+  }
+  if (mouseX >= user.sidesSlider.x && mouseX <= user.sidesSlider.x + user.sidesSlider.w && mouseY >= user.sidesSlider.y && mouseY <= user.sidesSlider.y + user.sidesSlider.h) {
+    user.sidesSlider.startDragging();
+  }
+}
+
+void mouseReleased() {
+  user.radiusSlider.stopDragging();
+  user.sidesSlider.stopDragging();
+}
+
+void mouseDragged() {
+  user.radiusSlider.update(mouseX);
+  user.sidesSlider.update(mouseX);
+}
+
